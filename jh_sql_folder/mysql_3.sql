@@ -51,7 +51,7 @@ order by total desc;
 select c.customerName, count(o.orderNumber) as total
 from customers as c
          # o.customerNumber = c.customerNumber 둘의 순서가 바뀌어도 동일한 결과
-         inner join orders as o on c.customerNumber = o.customerNumber
+         inner join orders as o using (customerNumber) #on c.customerNumber = o.customerNumber
 group by c.customerName # 중복 제거
 order by total desc;
 
@@ -64,4 +64,106 @@ from customers;
 
 # ** JOIN **
 # 테이블 간 공통 컬럼(foreign key)을 이용해 한 번의 쿼리로 두 테이블의 데이터를 가져온다.
+create table members
+(
+    member_id int auto_increment,
+    name      varchar(100),
+    primary key (member_id)
+);
+
+create table committees
+(
+    committee_id int auto_increment,
+    name         varchar(100),
+    primary key (committee_id)
+);
+
+insert into members(name)
+    value ('jone'),('jane'),('mary'),('david'),('amelia');
+
+insert into committees(name)
+    value ('jone'),('mary'),('amelia'),('joe');
+
+select *
+from members;
+select *
+from committees;
+
+# ** inner join **
+# syntax
+# SELECT column_list
+# FROM table_1
+# INNER JOIN table_2 ON join_condition;
+# 두 테이블에 동일한 이름의 컬럼이 있고 equal operator를 사용한다면 USING 구문을 사용할 수 있다.
+# INNER JOIN table_2 USING (column_name);  # -> 49line 예제
+select m.member_id, m.name as member, c.committee_id, c.name as committee
+from members m
+         inner join committees c using (name); # on c.name=m.name;
+
+select productCode, productName, textDescription
+from products t1
+         inner join productlines t2
+                    using (productLine);
+
+# INNER JOIN with GROUP BY
+select t1.orderNumber, t1.status, sum(t2.quantityOrdered * t2.priceEach) total
+from orders t1
+         inner join orderdetails t2
+                    using (orderNumber)
+group by orderNumber;
+
+# INNER JOIN - Three Tables
+select orderNumber, orderDate, orderLineNumber, productName, quantityOrdered, priceEach
+from orders
+         inner join orderdetails using (orderNumber)
+         inner join products using (productcode)
+order by orderNumber, orderLineNumber;
+
+# INNER JOIN - Four Tables
+select orderNumber, orderDate, customerName, orderLineNumber, productName, quantityOrdered, priceEach
+from customers
+         inner join orders using (customerNumber)
+         inner join orderdetails using (orderNumber)
+         inner join products using (productCode)
+order by orderNumber, orderLineNumber;
+
+# INNER JOIN with other operators
+select orderNumber, productName, MSRP, priceEach
+from products p
+inner join orderdetails o on p.productCode=o.productCode and p.msrp>o.priceEach;
+
+
+
+# ** LEFT JOIN **
+# right 테이블의 조건이 맞지 않을경우, left table의 컬럼을 기준으로 행은 생성되지만
+# right에 해당하는 컬럼은 null
+select m.member_id, m.name as member, c.committee_id, c.name as committee
+from members m
+         left join committees c using (name);
+
+# member 중 committee에 속하지 않은 멤버 = only members
+select m.member_id, m.name as member, c.committee_id, c.name as committee
+from members m
+         left join committees c using (name)
+where c.committee_id is null;
+
+# ** RIGHT JOIN **
+select m.member_id, m.name as member, c.committee_id, c.name as committes
+from members m
+         right join committees c using (name);
+
+# only committees
+select m.member_id, m.name, c.committee_id, c.name
+from members m
+         right join committees c using (name)
+where m.member_id is null;
+
+
+# ** CROSS JOIN **
+select m.member_id,
+       m.name,
+       c.committee_id,
+       c.name
+from members m
+         cross join committees c;
 
