@@ -130,7 +130,7 @@ order by orderNumber, orderLineNumber;
 # INNER JOIN with other operators
 select orderNumber, productName, MSRP, priceEach
 from products p
-inner join orderdetails o on p.productCode=o.productCode and p.msrp>o.priceEach;
+         inner join orderdetails o on p.productCode = o.productCode and p.msrp > o.priceEach;
 
 
 
@@ -146,6 +146,14 @@ select m.member_id, m.name as member, c.committee_id, c.name as committee
 from members m
          left join committees c using (name)
 where c.committee_id is null;
+
+# LEFT JOIN - Three Tables
+select lastName, firstName, customerName, checkNumber, amount
+from employees
+         left join customers on salesRepEmployeeNumber
+         left join payments on payments.customerNumber = customers.customerNumber
+order by customerName, checkNumber;
+
 
 # ** RIGHT JOIN **
 select m.member_id, m.name as member, c.committee_id, c.name as committes
@@ -167,3 +175,65 @@ select m.member_id,
 from members m
          cross join committees c;
 
+
+# ** self JOIN **
+# 테이블을 여러번 참조하기 때문에 반드시 테이블 별칭을 이용해야한다.
+select *
+from employees;
+
+# Manager: 관리자(직속상관), Direct report: 관리자에게 직접 보고를 올리는 사람
+select concat(m.lastName, ',', m.firstName) as Manager,
+       concat(e.lastName, ',', e.firstName) as 'Direct report'
+from employees e
+         inner join employees m on m.employeeNumber = e.reportsTo
+order by Manager desc;
+
+# ** self join using LEFT JOIN **
+# President는 reportsTo를 가지고 있지 않음(null)
+# INNER JOIN을 사용할 경우 President는 출력되지 않기 때문에
+# LEFT JOIN을 이용해 President를 포함시킬 수 있음
+select ifnull(concat(m.lastName, ',', m.firstName), 'Top manager') as 'Manager',
+       concat(e.lastname, ',', e.firstName)                        as 'Direct report'
+from employees e
+         left join employees m on m.employeeNumber = e.reportsTo
+order by Manager desc;
+
+select *
+from customers;
+
+select c1.city, c1.customerName, c2.customerName
+from customers c1
+         inner join customers c2 on c1.city = c2.city and c1.customerName < c2.customerName
+order by c1.city;
+
+
+# ** GROUP BY **
+select status, shippedDate, count(*)
+from orders
+group by status, shippedDate;
+
+select DISTINCT status
+from orders;
+
+select *
+from orders;
+
+
+select status, sum(quantityOrdered * priceEach) as amount
+from orders
+         inner join orderdetails
+                    using (orderNumber)
+group by status;
+
+select orderNumber, sum(quantityOrdered * priceEach) as total
+from orderdetails
+group by orderNumber;
+
+# 거래가 완료된 년도별 거래액
+select year(orderDate)                  as year,
+       sum(quantityOrdered * priceEach) as total
+from orders
+         inner join orderdetails using (orderNumber)
+where status = 'shipped'
+group by year  # group by 별칭 및 정렬(desc, asc)은 mysql만 가능
+having year > 2003;
