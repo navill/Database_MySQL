@@ -62,8 +62,6 @@ GROUP BY productline,
          orderYear
 WITH ROLLUP;
 
-
-
 # ** GROUPING **
 # GROUP BY 과정에서 발생하는 NULL을 체크할 때 사용
 SELECT orderYear, productLine, SUM(orderValue) as totalOrderValue, GROUPING (orderYear), GROUPING (productLine)
@@ -81,3 +79,30 @@ select if(grouping (orderYear), 'All year', orderYear)              as orderYear
 from sales
 group by orderYear, productLine
 with rollup;
+
+
+# ** SUB QUERY **
+# 주문에 없는 고객 이름 출력
+select customerName
+from customers
+where customerNumber not in
+      (select distinct customerNumber
+       from orders);
+
+# sub query - 총 가격이 60000이 넘는 주문 번호
+select orderNumber, sum(priceEach * quantityOrdered) as total
+from orderdetails
+         inner join orders using (orderNumber)
+group by orderNumber
+having total > 60000;
+
+# sub query를 이용해 해당 주문의 주문자 정보 출력
+select customerNumber, customerName
+from customers
+where exists(
+              select orderNumber, sum(priceEach * quantityOrdered) as total
+              from orderdetails
+                       inner join orders using (orderNumber)
+              where orders.customerNumber = customers.customerNumber
+              group by orderNumber
+              having total > 60000);
